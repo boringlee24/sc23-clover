@@ -55,7 +55,7 @@ class BaseExperiment:
 
     def get_ci_and_pue(self, ci_path='', pue_path=''):
         df = pd.read_csv(ci_path)
-        self.ci_profile = df['carbon_intensity_production_avg'].to_list()
+        self.ci_profile = df['CISO_March'].to_list()
         if pue_path == '':
             self.pue_profile = [1.5] * len(self.ci_profile)
         else:
@@ -231,6 +231,7 @@ class RandomExperiment(BaseExperiment): # with history, but no MIG graph
             read = json.load(f)
         self.SLA = read['lat'][0]
         self.exp_algorithm = 'rand'
+        # Note: even if arrival rate is 5x faster than the base, Clover can still handle without needing more GPUs
         if self.service_name == 'albert':
             self.arrival = 0.08
         elif self.service_name in ['yolo', 'efficientnet']:        
@@ -239,8 +240,8 @@ class RandomExperiment(BaseExperiment): # with history, but no MIG graph
         self.eval_result_seq = []
         self.evaluated_config = {}
         self.evaluated_config_set = set()
-        self.iter_limit = 20 # if after 5 iterations no improvement, stop
-        self.no_improv_limit = 5
+        self.iter_limit = 10 
+        self.no_improv_limit = 5 # if after 5 iterations no improvement, stop
         self.req_limit = 1000
         with open(f'{self.root_dir}/mig/partition_code.json') as f:
             self.partition_code = json.load(f)
@@ -419,8 +420,16 @@ class RandomExperiment(BaseExperiment): # with history, but no MIG graph
         self.listener_thread.join()
 
 if __name__ == '__main__':
-    # ins = RandomExperiment(service_name='yolo')
-    exp = BaseExperiment('albert', num_nodes=1, gpus_per_node=2)
-    ip1, ip2, ip3 = exp.initialize(mig_partition='0', models='3')
+    # command line arguments
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--service', type=str, default='yolo') # efficientnet, albert
+    parser.add_argument('--num_nodes', type=int, default=1)
+    parser.add_argument('--gpus_per_node', type=int, default=2)
+    args = parser.parse_args()
+    
+    base_variant = {'yolo': '6', 'efficientnet': '7', 'albert': '3'} # yolov5x6, efficientnet-b7, albert-xxlarge
+    exp = BaseExperiment(args.service, num_nodes=args.num_nodes, gpus_per_node=args.gpus_per_node)
+    ip1, ip2, ip3 = exp.initialize(mig_partition='0', models=base_variant[args.service])
     exp.run()
-    # exp.test_run()
+    

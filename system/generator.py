@@ -15,6 +15,7 @@ from pathlib import Path
 import socket
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # root directory
+EXP_ROOT = FILE.parents[1]
 REPOROOT=FILE.parents[2]
 import logging.config
 logging.config.fileConfig(fname=f'{ROOT}/logging_gen.conf', disable_existing_loggers=False)
@@ -79,7 +80,6 @@ def tcp_listener(controller_ip): # controller thread listen to GPU node feedback
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_address = (socket.gethostbyname(socket.gethostname()), 10002)
     logger.info('starting up on {} port {}'.format(*server_address))
-    # print('starting up on {} port {}'.format(*server_address), file=run_log, flush=True)
     sock.bind(server_address)
     sock.listen(5) 
 
@@ -104,25 +104,20 @@ def tcp_listener(controller_ip): # controller thread listen to GPU node feedback
                         elif service_name == 'efficientnet':
                             input_list = glob.glob(f'{REPOROOT}/efficient-net/examples/imagenet/data/val/*/*.JPEG')
                         elif service_name == 'albert':
-                            with open(f'{REPOROOT}/carbon_scheduler/albert/request/dev-v2.0.json') as f:
+                            with open(f'{EXP_ROOT}/albert/request/dev-v2.0.json') as f:
                                 input_list = json.load(f)                                                        
                         else:
                             raise RuntimeError('Service is not supported')
 
                         p1 = Process(target=producer, args=(stop_event,arrival,queue))      
                         p1.start()
-                        # p2 = Process(target=consumer, args=(stop_event,input_list,args,queue,gen_session))
-                        # p2.start()
-                        # p2.join()
                         consumer(stop_event, input_list=input_list, queue=queue, gen_session=gen_session, controller_ip=controller_ip, limit=limit)
                         stop_event.set()
                         p1.join()
                         # logger.info(gen_session.response_time)
                         accuracy, latency = get_accuracy_and_latency(service_name, gen_session.response_time)
                         send_signal(controller_ip['ip'], controller_ip['port'], cmd=f'perf {accuracy} {latency}')
-                        # connection.close()
                     connection.sendall(b'success')
-                    #time.sleep(5)
                 else:
                     break
         finally:
@@ -139,24 +134,8 @@ class GeneratorSession:
             self.response_time[ip] = []
         self.req_cnt = 0        
         self.service = service
-    # def new_session(self, service_ip):
-    #     self.session = FuturesSession()
-    #     self.ip_state = deque(service_ip)
-    #     self.req_record = {}
-    #     self.response_time = {}
-    #     for ip in service_ip:
-    #         self.req_record[ip] = ''
-    #         self.response_time[ip] = []
-    #     self.req_cnt = 0        
 
 if __name__ == '__main__':
-    # parser = argparse.ArgumentParser(description='service details')
-    # parser.add_argument('--arrival', type=float, help='inter-arrival period', default=0.2)
-    # parser.add_argument('--service', type=str, help='type of service (e.g., albert)', default='yolo')
-    # parser.add_argument('--batch', type=int, help='request batch size', default=8)
-    # # parser.add_argument('--limit', type=int, help='request number limit before termination', default=200)    
-    # args = parser.parse_args()
-
     with open('controller.json') as f:
         controller_ip = json.load(f)
     hostname = socket.gethostbyname(socket.gethostname())

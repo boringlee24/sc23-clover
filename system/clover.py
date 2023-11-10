@@ -27,7 +27,7 @@ class CloverExperiment(RandomExperiment):
     def __init__(self, service_name, num_nodes=1, gpus_per_node=1, req_limit=1000):
         super().__init__(service_name, num_nodes, gpus_per_node)
         self.exp_algorithm = 'clover'
-        self.neighbor_thres = 4 # manhattan distance # TODO: try thres=3 also
+        self.neighbor_thres = 4 # manhattan distance 
         self.no_neighbor_limit = 400 # if cannot generate a neighbor after 400 tries, terminate
         self.sim_anneal = system_utils.SimulatedAnneling()
         self.req_limit = req_limit
@@ -257,7 +257,16 @@ class CloverExperiment(RandomExperiment):
         self.listener_thread.join()
 
 if __name__ == '__main__':
-    exp = CloverExperiment('yolo', num_nodes=1, gpus_per_node=2, req_limit=500)
-    exp.exp_algorithm = 'test_clover'
-    exp.initialize(mig_partition='7', models='xxx')
+    # command line arguments
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--service', type=str, default='yolo') # efficientnet, albert
+    parser.add_argument('--num_nodes', type=int, default=1)
+    parser.add_argument('--gpus_per_node', type=int, default=2)
+    args = parser.parse_args()
+
+    base_variant = {'yolo': '6', 'efficientnet': '7', 'albert': '3'} # yolov5x6, efficientnet-b7, albert-xxlarge
+    exp = CloverExperiment(args.service, num_nodes=args.num_nodes, gpus_per_node=args.gpus_per_node, req_limit=500)
+    exp.exp_algorithm = 'clover'
+    exp.initialize(mig_partition='0', models=base_variant[args.service])
     exp.run(Lambda=0.1)

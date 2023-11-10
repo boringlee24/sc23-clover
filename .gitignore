@@ -3,6 +3,7 @@ controller.json
 master.json
 service.json
 tracker.json
+system/logs
 
 # Repo-specific GitIgnore ----------------------------------------------------------------------------------------------
 *.jpg
