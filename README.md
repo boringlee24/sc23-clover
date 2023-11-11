@@ -110,7 +110,7 @@ cd system
 python generator.py
 ```
 
-### 4. Wait for the experiment to finish
+#### 4. Wait for the experiment to finish
 
 Go back to the controller node. Monitor the ``run.log`` file for events during the experiment. If it gets stuck waiting, e.g., ``Waiting for service URLs to be up``, check the ``/scratch/li.baol/carbon_logs/`` directory for error messages.
 

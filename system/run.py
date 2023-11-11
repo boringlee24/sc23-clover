@@ -86,4 +86,4 @@ for mi, metric in enumerate(metrics):
 print(f"Application: {service}")
 print(f"Clover carbon saving: {data['carbon']['norm'][0]}%")
 print(f"Clover accuracy loss: {data['acc']['norm'][0]}%")
-print(f"Clover latency drop: {(1-data['lat']['norm'][0])*100}%")
+print(f"Clover latency improvement: {(1-data['lat']['norm'][0])*100}%")
